@@ -1,0 +1,49 @@
+---
+title: "HindFootLength"
+format: html
+editor: visual
+code-fold: true 
+---
+
+## Hind-foot Length
+
+## Loading Packages
+
+```{r}
+library(tidyverse)
+```
+
+# Loading External Survey Data
+
+```{r}
+download.file(url = "https://ndownloader.figshare.com/files/2292169",
+              destfile = "data/Survey_data.csv")
+survey <- read.csv("data/Survey_data.csv")
+```
+
+# Calculating Mean Hind-foot Length
+
+```{r}
+#| echo: false
+mean(survey$hindfoot_length,na.rm=TRUE)
+```
+
+# Manipulating Survey Data to Calculate Mean Yearly Hind-foot Length
+
+```{r}
+
+mean_hindfoot <-
+  survey %>%
+  filter(!is.na(hindfoot_length)) %>%
+  mutate(hindfoot_length_cm = hindfoot_length /10) %>%
+  group_by(year) %>%
+  summarize(mean_hindfoot_cm = mean(hindfoot_length_cm))
+```
+
+# Mean Yearly Hind-foot Length
+
+```{r}
+#| echo: false
+
+plot(mean_hindfoot)
+```
