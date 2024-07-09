@@ -1,0 +1,14 @@
+project:
+  type: website
+  output-dir: docs
+  execute-dir: project
+
+website:
+  title: "Code_colearning"
+ 
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
