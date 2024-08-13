@@ -65,21 +65,43 @@ rodents <- survey %>% dplyr::filter(taxa == "Rodent") %>%
 
 # Mean yearly weight by species
 
-```{r}
-#| echo: false
+Let's write a function to simplify plotting these data without having to copy+paste ggplot code
 
-ggplot(rodents, aes(x = year, y = mass, ymin = mass - se_w, ymax = mass + se_w, group = species_id)) +
+```{r}
+sp_time_plot <- function(df, x, y, error, group, option) {
+  
+if(option == "overlay") {
+ggplot(df, aes(x = x, y = y, ymin = y - error, ymax = y + error, colour = group)) +
+  geom_point() +
+  geom_errorbar() +
+  geom_line() +
+  viridis::scale_colour_viridis(discrete = TRUE, option = "D") +
+  theme_bw()
+}
+  
+else {
+ggplot(df, aes(x = x, y = y, ymin = y - error, ymax = y + error, group = group)) +
   geom_point() +
   geom_errorbar() +
   geom_line() +
   facet_wrap(. ~ species_id) +
-  theme_bw()
+  theme_bw() 
+}
+}
+```
 
-ggsave(filename = "graphics/faceted_mass.png",
-	width = 20,
-	height = 20,
-	dpi = 320
-	)
+Now let's see what these masses look like through time, faceted out:
+
+```{r}
+#| echo: false
+
+sp_time_plot(df = rodents, 
+             x = rodents$year, 
+             y = rodents$mass, 
+             error = rodents$se_w, 
+             group = rodents$species_id, 
+             option = "facet")
+
 ```
 
 Several of these species don't really have enough obs through the time series to merit including them. Let's remove some
@@ -95,20 +117,19 @@ sums <- rodents %>% group_by(species_id) %>%
 Of the 25 rodent species in order, there's a jump from n = 141 to n = 876, feels like a natural breakpoint between "common" and not. And leaves us 12 species with a lot of values, let's focus on them and see what the plots look like in that case
 
 ```{r}
-#| echo: false
+#| echo: true
 
 incl <- c(subset(sums, n_tot > 800)$species_id)
 
 rodents %<>% filter(species_id %in% incl)
 
-ggplot(rodents, aes(x = year, y = mass, ymin = mass - se_w, ymax = mass + se_w, colour = species_id)) +
-  geom_point() +
-  geom_errorbar() +
-  geom_line() +
-  ylab("Mass (g)") +
-  viridis::scale_colour_viridis(discrete = TRUE, option = "C") +
- # facet_wrap(. ~ species_id) +
-  theme_bw()
+sp_time_plot(df = rodents, 
+             x = rodents$year, 
+             y = rodents$mass, 
+             error = rodents$se_w, 
+             group = rodents$species_id, 
+             option = "overlay")
+
 ```
 
 NL = Neotoma albigula is really variable! the rest of them seem fairly flat.
