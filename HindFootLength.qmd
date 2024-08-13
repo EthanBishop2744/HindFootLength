@@ -11,6 +11,7 @@ code-fold: true
 
 ```{r}
 library(tidyverse)
+library(magrittr)
 ```
 
 # Loading External Survey Data
@@ -47,3 +48,67 @@ mean_hindfoot <-
 
 plot(mean_hindfoot)
 ```
+
+# Species-specific weights through time
+
+```{r}
+#| echo: false  
+rodents <- survey %>% dplyr::filter(taxa == "Rodent") %>%
+  group_by(species_id, year) %>% 
+  dplyr::filter(!is.na(weight)) %>%
+  summarise(mass = mean(weight),
+            n = n(),
+            se_w = sd(weight)/sqrt(n))
+
+
+```
+
+# Mean yearly weight by species
+
+```{r}
+#| echo: false
+
+ggplot(rodents, aes(x = year, y = mass, ymin = mass - se_w, ymax = mass + se_w, group = species_id)) +
+  geom_point() +
+  geom_errorbar() +
+  geom_line() +
+  facet_wrap(. ~ species_id) +
+  theme_bw()
+
+ggsave(filename = "graphics/faceted_mass.png",
+	width = 20,
+	height = 20,
+	dpi = 320
+	)
+```
+
+Several of these species don't really have enough obs through the time series to merit including them. Let's remove some
+
+```{r}
+#| echo: false
+
+sums <- rodents %>% group_by(species_id) %>%
+  summarise(n_tot = sum(n))
+
+```
+
+Of the 25 rodent species in order, there's a jump from n = 141 to n = 876, feels like a natural breakpoint between "common" and not. And leaves us 12 species with a lot of values, let's focus on them and see what the plots look like in that case
+
+```{r}
+#| echo: false
+
+incl <- c(subset(sums, n_tot > 800)$species_id)
+
+rodents %<>% filter(species_id %in% incl)
+
+ggplot(rodents, aes(x = year, y = mass, ymin = mass - se_w, ymax = mass + se_w, colour = species_id)) +
+  geom_point() +
+  geom_errorbar() +
+  geom_line() +
+  ylab("Mass (g)") +
+  viridis::scale_colour_viridis(discrete = TRUE, option = "C") +
+ # facet_wrap(. ~ species_id) +
+  theme_bw()
+```
+
+NL = Neotoma albigula is really variable! the rest of them seem fairly flat.
